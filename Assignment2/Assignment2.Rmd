@@ -19,31 +19,53 @@ library(ggrepel)
 library(plotly)
 library(viridis)
 library(hrbrthemes)
+library(RColorBrewer)
+library(wordcloud)
+library(readr)
 ```
 
 
 
 ```{r}
 zillow_house = read.csv('ZillowHouseData.csv')
-crime_state = read.csv('ucr_by_state.csv')
+crime_state = read.csv('ucr_stat2.csv')
 silver_price = read.csv('Silver.csv')
-nc_unemployment = read.csv('NCUR.csv')
+state_unemployment = read.csv('State.csv')
 national_unemployment = read.csv('NationalUnemployment.csv')
 nasdaq = read.csv('Nasdaq.csv')
 mortgage_rate = read.csv('MORTGAGE30US.csv')
 job_1 = read.csv('Joblosesandgainsbyindustry.csv')
-job_2 = read.csv('JobGainsandLossbyindustry.csv')
+job_2 = read.csv('Output.csv')
 gold_price = read.csv('GoldPrice.csv')
 gdp = read.csv('GDP.csv')
 employment = read.csv('EmploymentByIndustry.csv')
+employment2 = read.csv('employment2.csv')
 oil = read.csv('CrudOil.csv')
 consumer_spending = read.csv('ConsumerSpending.csv')
 health_data = read.csv('CleanHealth.csv')
 
+
+for (i in seq(3, ncol(job_2), 2)) {
+  job_2[,i] = sapply(job_2[,i], function(x) x*-1)
+}
+
+
+job_2 = job_2 %>% pivot_longer(-Quarter)
+
+job_2 = job_2 %>% rename(Industry = name , gain_loss = value)
 national_unemployment = national_unemployment %>% rename(unemployment_rate = UNRATE)
 consumer_spending = consumer_spending %>% rename(consumer_spending_USD = CPIAUCSL)
 mortgage_rate = mortgage_rate %>% rename(mortgage_rate = MORTGAGE30US )
 zillow_house$Date = mdy(zillow_house$Date)
+```
+
+
+```{r}
+state_unemployment2 = state_unemployment %>% filter(Year > 2006 & Year <2010) %>% group_by(Year, State) %>% summarize(unemployment_rate = mean(Rate))
+state = c('Colorado', 'California', 'North Carolina', 'Florida', 'Massachusetts')
+
+state_unemployment2 = state_unemployment2 %>% filter(State %in% state)
+
 ```
 
 
@@ -96,7 +118,7 @@ format_quarters = function(x) {
 
 
 ```{r}
-ggplot(data = national_unemployment, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Blue') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+xlab("DATE")
+ggplot(data = national_unemployment, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Darkorange') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+xlab("DATE")
 
  ggplot(data = nasdaq, aes(x=Date, y=Close, group=1)) + geom_line(color='Green') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'NASDAQ Price by Year ')+xlab("Date")
 
@@ -105,7 +127,6 @@ ggplot(data = consumer_spending, aes(x=DATE, y=consumer_spending_USD, group=1)) 
 ggplot(data = mortgage_rate, aes(x=DATE, y=mortgage_rate, group=1)) + geom_line(color='darkblue') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = '30 Years Mortgage Rate % by Year')+xlab("DATE")
 
 # ggarrange(unemployment, econ, spend, mortgage, ncol = 2, nrow = 2, width = 6)
-
 ```
 ```{r}
 type = function(x) {
@@ -138,7 +159,7 @@ oil_sil_gold = oil_sil_gold %>% rename(USD_Value = value_col)
 ```{r}
  ggplot(data = nasdaq, aes(x=Date, y=Close, group=1)) + geom_line(color='Green') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'NASDAQ Price by Year ')+xlab("Date")
 
-ggplot(data = national_unemployment, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Blue') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+xlab("DATE")
+ggplot(data = national_unemployment, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Dark Orange') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+xlab("DATE")
 
 oil_sil_gold2 = oil_sil_gold %>% filter(type == 'gold')
 ggplot(data = oil_sil_gold2, aes(x=Date, y=USD_Value, group=1)) + geom_line(color='chocolate') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'Price Of Gold')+xlab("DATE")
@@ -146,7 +167,7 @@ ggplot(data = oil_sil_gold2, aes(x=Date, y=USD_Value, group=1)) + geom_line(colo
 
 oil_sil_gold3 = oil_sil_gold %>% filter(type == 'oil' | type == 'silver')
 
-ggplot(data = oil_sil_gold3, aes(x=Date, y=USD_Value, group=type, color=type)) + geom_line() + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'Price Of Gold')+xlab("DATE")
+ggplot(data = oil_sil_gold3, aes(x=Date, y=USD_Value, group=type, color=type)) + geom_line() + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'Price Of Oil and Silver')+xlab("DATE")
 ```
 
 ```{r}
@@ -205,4 +226,70 @@ nc_home %>% ggplotly() %>% layout
 
 
 ```
+
+```{r}
+national_unemployment2 = national_unemployment %>% filter(DATE >= '2007-01-01
+' & DATE <= '2009-12-01' )
+
+national_unemployment2$DATE = ymd(national_unemployment2$DATE)
+
+ggplot(data = national_unemployment2, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Darkorange') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+scale_x_date("Year and Month By Quarter", breaks = date_breaks("3 months"), labels = format_quarters)
+
+jobplot = ggplot(data = job_2, aes(x=gain_loss, y=Industry, fill = Quarter)) + geom_bar(stat="identity") + scale_x_continuous(labels = comma) + theme_bw() + labs(title = "Jobs Gains/Loss By Industry During the Recession", ylab = "Industry", xlab = "Gains and Loss" ) 
+jobplot %>% ggplotly() %>% layout 
+
+wordcloud(words = employment2$Industry, freq= employment2$Num_of_Employment_InThousands, scale=c(3, .6),random.order = FALSE,  
+          rot.per = 0.35,  
+          colors = brewer.pal(8, "Dark2"))
+
+employplot = ggplot(data = employment2, aes(x=Num_of_Employment_InThousands, y=Industry, fill = Industry)) + geom_bar(stat="identity") + theme_bw() +scale_x_continuous(labels = comma)+theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(title = "Most Jobs By Industry During the Recession", ylab = " ") + xlab("Number of Employment By Thousands")
+employplot %>% ggplotly() %>% layout 
+```
+
+
+```{r}
+national_unemployment2 = national_unemployment %>% filter(DATE >= '2007-01-01
+' & DATE <= '2009-12-01' )
+
+national_unemployment2$DATE = ymd(national_unemployment2$DATE)
+
+ggplot(data = national_unemployment2, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Darkorange') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+scale_x_date("Year and Month By Quarter", breaks = date_breaks("3 months"), labels = format_quarters)
+
+state_graph = ggplot(data = state_unemployment2, aes(x=Year, y=unemployment_rate, fill= unemployment_rate)) + geom_col()+ facet_grid(~State) + scale_y_continuous(labels = comma) + theme_bw() + labs(title = "Unemployment by Targeted States", xlab = "Year" ) + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + ylab("Unemployment Rate %") 
+state_graph %>% ggplotly() %>% layout 
+
+crime_state = crime_state %>% filter(jurisdiction %in% state) %>% filter(year > 2006 & year < 2010)
+
+crime_graph = ggplot(data = crime_state, aes(x=year, y=property_crime_total, fill = as.factor(year))) + geom_col()+facet_grid(~jurisdiction) + scale_y_continuous(labels = comma) + theme_bw() + labs(title = "Property Crime by Targeted States" ) + theme(axis.text.x = element_text(angle=55, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85), axis.title.x = element_blank(),
+  axis.title.y = element_blank()) 
+crime_graph %>% ggplotly() %>% layout 
+
+state2 = c('CO (Colorado)', 'Ca (California)', 'NC (North Carolina)', 'FL (Florida)', 'Ma (Massachusetts)')
+health_data = health_data %>% filter(State %in% state2)
+
+
+
+```
+
+```{r}
+
+state_graph = ggplot(data = state_unemployment2, aes(x=Year, y=unemployment_rate, fill= unemployment_rate)) + geom_col()+ facet_grid(~State) + scale_y_continuous(labels = comma) + theme_bw() + labs(title = "Unemployment by Targeted States", xlab = "Year" ) + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + ylab("Unemployment Rate %") 
+state_graph %>% ggplotly() %>% layout 
+
+state2 = c('CO (Colorado)', 'CA (California)', 'NC (North Carolina)', 'FL (Florida)', 'MA (Massachusetts)')
+health_data2 = health_data %>% filter(State %in% state2)
+
+health3 = health_data2 %>% group_by(Causes.For.Admission, Year) %>% summarize(Num_admission = sum(Number.Of.Admission), .groups = 'drop')
+
+health2 = ggplot(data = health_data2, aes(x=as.factor(Year), y=Number.Of.Admission, fill = as.factor(Year))) + geom_col()+facet_grid(~State) + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85),axis.title.x = element_blank(),
+  axis.title.y = element_blank() ) + labs(title = 'Number of ER Admissions Among Medicare Beneficiaries ')
+health2 %>% ggplotly() %>% layout()
+
+
+health3 = ggplot(data = health3, aes(x=Num_admission, y=Causes.For.Admission, fill=Causes.For.Admission)) +geom_col() +facet_grid(~Year)+ theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(),legend.position="none", axis.title.x = element_blank(),axis.title.y = element_blank()) + labs(title = 'ER Admission During The Recession')
+health3 %>% ggplotly() %>% layout()
+
+
+```
+
 
