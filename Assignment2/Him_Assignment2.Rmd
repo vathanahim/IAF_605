@@ -1,0 +1,256 @@
+---
+title: "Socio Economic Impact Of The Great Recession"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+  html_document:
+    df_print: paged
+  html_notebook: default
+---
+<br>
+-------------
+```{r}
+if(!require("tidyverse")) install.packages("tidyverse")
+library(tidyverse)
+if(!require("lubridate")) install.packages("lubridate")
+library(lubridate)
+if(!require("ggpubr")) install.packages("ggpubr")
+library(ggpubr)
+if(!require("DT")) install.packages("DT")
+library(DT)
+if(!require("scales")) install.packages("scales")
+library(scales)
+if(!require("zoo")) install.packages("zoo")
+library(zoo)
+if(!require("hrbrthemes")) install.packages("hrbrthemes")
+library(hrbrthemes)
+if(!require("ggrepel")) install.packages("ggrepel")
+library(ggrepel)
+if(!require("plotly")) install.packages("plotly")
+library(plotly)
+if(!require("viridis")) install.packages("viridis")
+library(viridis)
+if(!require("hrbrthemes")) install.packages("hrbrthemes")
+library(hrbrthemes)
+if(!require("RColorBrewer")) install.packages("RColorBrewer")
+library(RColorBrewer)
+if(!require("wordcloud2")) install.packages("wordcloud2")
+library(wordcloud2)
+if(!require("readr")) install.packages("readr")
+library(readr)
+
+
+knitr::opts_chunk$set(fig.width = 5, fig.asp = 1/3)
+
+setwd(getwd())
+load(file = "~assignment2.RData")
+```
+
+# Introduction {data-icon="fa-table"}
+
+This visualization project aims to analyze the socio-economic impact of The Great Recession. It will be split into 6 dashboards:
+
+Dashboard 1: Examines the main economic factors resulting from The Great Recession
+
+Dashboard 2: Examines the price of alternative currency such as oil, silver, gold to see if it's value raises inversely to the recession
+
+Dashboard 3: Examine the prices of homes in the targeted states (TX, FL, MA, NC, CA) and homes in some of the most populous city in NC
+
+Dashboard 4: Examines which work-force industry was most impacted by the recession
+
+Dashboard 5: Examines unemployment rates among the targeted states (CO, FL, MA, NC, CA)
+
+Dashboard 6: Examines unemployment rates in relationship to raising number of medicare beneficiaries and reasons for hospital admissions among the beneficiaries 
+
+# Economic Indicators of the Great Recession
+## column1
+### National Unemployment
+
+```{r}
+ggplot(data = national_unemployment, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Darkorange') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+xlab("DATE")+ylab('Unemployment Rate')
+```
+
+### Nasdaq Price
+```{r}
+ ggplot(data = nasdaq, aes(x=Date, y=Close, group=1)) + geom_line(color='Green') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'NASDAQ Price by Year ')+xlab("Date")
+```
+
+## Column2
+
+### Consumer Spending 
+```{r}
+ggplot(data = consumer_spending, aes(x=DATE, y=consumer_spending_USD, group=1)) + geom_line(color='deepskyblue') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'Consumer Spending $USD by Year')+xlab("DATE")+ylab("Consumer Spending")
+```
+
+### 30 Years Mortgage Rate 
+```{r}
+ggplot(data = mortgage_rate, aes(x=DATE, y=mortgage_rate, group=1)) + geom_line(color='darkblue') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = '30 Years Mortgage Rate % by Year')+xlab("DATE")
+```
+
+
+# Price of alternative currency in response to The Recession
+## Column 1
+### Nasdaq Price
+```{r}
+ggplot(data = nasdaq, aes(x=Date, y=Close, group=1)) + geom_line(color='Green') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'NASDAQ Price by Year ')+xlab("Date")
+```
+
+### National Unemployment
+```{r}
+ggplot(data = national_unemployment, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Dark Orange') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+xlab("DATE")+ylab("Unemployment Rate")
+```
+
+## Column 2
+### GoldPrice
+
+```{r}
+oil_sil_gold2 = oil_sil_gold %>% filter(type == 'gold')
+gold = ggplot(data = oil_sil_gold2, aes(x=Date, y=USD_Value, group=1)) + geom_line(color='chocolate') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'Price Of Gold')+xlab("DATE")+ylab('USD Value')
+gold %>% ggplotly() %>% layout 
+```
+
+### Oil/Silver
+```{r}
+oil_sil_gold3 = oil_sil_gold %>% filter(type == 'oil' | type == 'silver')
+
+oil_sil = ggplot(data = oil_sil_gold3, aes(x=Date, y=USD_Value, group=type, color=type)) + geom_line() + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank()) + labs(title = 'Price Of Oil and Silver')+xlab("DATE")+ylab("USD Value")
+oil_sil %>% ggplotly() %>% layout
+```
+
+# Impact On Housing Market 
+## Column 1
+### Housing Price By States
+```{r}
+zillow_house2 = zillow_house %>% group_by(Year=year(Date), State, City) %>% summarize(avg_home_price = mean(House.Price), .groups = 'drop')
+zillow_house3 = zillow_house %>% group_by(Year=year(Date), State) %>% summarize(avg_home_price = mean(House.Price), .groups = 'drop')
+
+
+zillow_house3 %>% 
+datatable( 
+  #Show custom column headers.
+  colnames = c('Year','State', 'Average Home($)'),
+  #Show (or not) Row names or Custom row names.
+  rownames = FALSE,
+  #Where is the filter placed (top, bottom,none)
+  filter="top", 
+  #css styles on tables
+  class = 'stripe hover',
+  #Use Captions to generate custom captions.
+  caption = htmltools::tags$caption(
+    style = 'caption-side: top; 
+      text-align: center;',
+    htmltools::h2('Average Home Price by State')),
+  options = list(pageLength = 15, scrollX=T)) %>% 
+  formatRound('avg_home_price',digits = 2)
+```
+
+### Mortgage Rate
+```{r}
+mortgage_rate2 = mortgage_rate %>% filter(DATE >= '2007-01-04' & DATE <= '2009-12-31')
+
+ggplot(data = mortgage_rate2, aes(x=DATE, y=mortgage_rate, group=1)) + geom_line(color='darkblue') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = '30 Years Mortgage Rate Year')+scale_x_date("Year and Month By Quarter", breaks = date_breaks("3 months"), labels = format_quarters) + ylab('Mortgage Rate %')
+
+```
+
+## Column 2
+### Average Home Price Among Targeted States
+```{r}
+states = c('NC','FL','MA','CA','TX')
+zillow_house4 = zillow_house3 %>% filter(State %in% states)
+
+state_home = ggplot(data = zillow_house4, aes(x=State, y=avg_home_price) ) +
+    geom_segment( aes(x=State , xend=State, y=0, yend=avg_home_price, group = Year), color="grey") +
+    geom_point( colour=as.factor(zillow_house4$Year), size = 5) + 
+  coord_flip() +
+    theme(
+      legend.position="none"
+    ) + scale_y_continuous(labels = comma) + labs(title = 'Avg Home Price By States')+ ylab("AVG Home Price") 
+
+state_home %>%  ggplotly() %>% layout 
+```
+
+### Average Home Price Among Cities in NC
+```{r}
+nc_city = c('Greensboro','Winston-Salem','Durham','Chapel Hill','Oak Ridge', 'Charlotte', 'Colfax', 'Wilmington', 'Asheville', 'Ocean Isle Beach')
+zillow_house5 = zillow_house2 %>% filter(City %in% nc_city & State == 'NC')
+# zillow_house5$Year = as.Date(ISOdate(zillow_house5$Year, 1, 1))
+
+nc_home = ggplot(zillow_house5, aes(x=as.factor(Year), y = avg_home_price, size = avg_home_price, color = City)) + geom_point(alpha = 0.7)  +scale_y_continuous(labels = comma) +  scale_size(range = c(1.4, 10), name="Avg Home Price") +theme_bw()+ theme(axis.text.x = element_text(angle=90, vjust = 0.5)) +labs(title = 'Average Home Price Cities in NC', y= 'Avg Home Price')
+nc_home %>% ggplotly() %>% layout 
+```
+
+# Recession Impact On Different Industries
+## Column 1
+### Job Sectors Gain/Loss
+```{r}
+jobplot = ggplot(data = job_2, aes(x=gain_loss, y=Industry, fill = Quarter)) + geom_bar(stat="identity") + scale_x_continuous(labels = comma) + theme_bw() + labs(title = "Jobs Gains/Loss By Industry During the Recession", ylab = "Industry", xlab = "Gains and Loss" ) 
+jobplot %>% ggplotly() %>% layout 
+```
+
+## Column 2
+### Most Employed Sectors
+```{r}
+employplot = ggplot(data = employment2, aes(x=Num_of_Employment_InThousands, y=Industry, fill = Industry)) + geom_bar(stat="identity") + theme_bw() +scale_x_continuous(labels = comma)+theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(title = "Most Jobs By Industry During the Recession", ylab = " ") + xlab("Number of Employment By Thousands")
+employplot %>% ggplotly() %>% layout 
+```
+
+# Impact Of National Unemployment On Crime
+## Column 1
+### Unemployment
+```{r}
+national_unemployment2 = national_unemployment %>% filter(DATE >= '2007-01-01
+' & DATE <= '2009-12-01' )
+
+national_unemployment2$DATE = ymd(national_unemployment2$DATE)
+
+ggplot(data = national_unemployment2, aes(x=DATE, y=unemployment_rate, group=1)) + geom_line(color='Darkorange') + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + labs(title = 'National Unemployment by Year')+scale_x_date("Year and Month By Quarter", breaks = date_breaks("3 months"), labels = format_quarters) + ylab("Unemployment %")
+```
+
+### Unemployment by State
+```{r}
+state_graph = ggplot(data = state_unemployment2, aes(x=Year, y=unemployment_rate, fill= unemployment_rate)) + geom_col()+ facet_grid(~State) + scale_y_continuous(labels = comma) + theme_bw() + labs(title = "Unemployment by Targeted States", xlab = "Year" ) + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + ylab("Unemployment Rate %") 
+state_graph %>% ggplotly() %>% layout 
+```
+
+## Column 2
+### Crime by State
+```{r}
+crime_state = crime_state %>% filter(jurisdiction %in% state) %>% filter(year > 2006 & year < 2010)
+
+crime_graph = ggplot(data = crime_state, aes(x=year, y=property_crime_total, fill = as.factor(year))) + geom_col()+facet_grid(~jurisdiction) + scale_y_continuous(labels = comma) + theme_bw() + labs(title = "Property Crime by Targeted States" ) + theme(axis.text.x = element_text(angle=55, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85), axis.title.x = element_blank(),
+  axis.title.y = element_blank()) 
+crime_graph %>% ggplotly() %>% layout 
+
+state2 = c('CO (Colorado)', 'Ca (California)', 'NC (North Carolina)', 'FL (Florida)', 'Ma (Massachusetts)')
+health_data = health_data %>% filter(State %in% state2)
+
+```
+
+# Impact Of Unemployment on Medicare Beneficiaries 
+## Column 1
+### Unemployment Targeted States
+```{r}
+state_graph = ggplot(data = state_unemployment2, aes(x=Year, y=unemployment_rate, fill= unemployment_rate)) + geom_col()+ facet_grid(~State) + scale_y_continuous(labels = comma) + theme_bw() + labs(title = "Unemployment by Targeted States", xlab = "Year" ) + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85)) + ylab("Unemployment Rate %")
+state_graph %>% ggplotly() %>% layout
+```
+
+### Medicare Beneficiares Among Targeted States
+```{r}
+state2 = c('CO (Colorado)', 'CA (California)', 'NC (North Carolina)', 'FL (Florida)', 'MA (Massachusetts)')
+health_data2 = health_data %>% filter(State %in% state2)
+health3 = health_data2 %>% group_by(Causes.For.Admission, Year) %>% summarize(Num_admission = sum(Number.Of.Admission), .groups = 'drop')
+
+health2 = ggplot(data = health_data2, aes(x=as.factor(Year), y=Number.Of.Admission, fill = as.factor(Year))) + geom_col()+facet_grid(~State) + theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(), legend.position = c(.4,0.85),axis.title.x = element_blank(),
+  axis.title.y = element_blank() ) + labs(title = 'Number of ER Admissions Among Medicare Beneficiaries ')
+health2 %>% ggplotly() %>% layout()
+```
+
+## Column 2
+### Causes For ER Admission
+```{r}
+health3 = ggplot(data = health3, aes(x=Causes.For.Admission, y=Num_admission, fill=Causes.For.Admission)) +geom_col() +facet_grid(~Year)+ theme_bw() + theme(axis.text.x = element_text(angle=90, vjust = 0.5), legend.title=element_blank(),legend.position="none", axis.title.x = element_blank(),axis.title.y = element_blank()) + labs(title = 'Causes For ER Admission During The Recession')
+health3 %>% ggplotly() %>% layout()
+```
+
+
