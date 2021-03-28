@@ -7,42 +7,55 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
 ```{r}
-require(tidyverse)
-require(ggplot2)
-require(lubridate)
-require(ggpubr)
-require(DT)
+if(!require("tidyverse")) install.packages("tidyverse")
+library(tidyverse)
+if(!require("lubridate")) install.packages("lubridate")
+library(lubridate)
+if(!require("ggpubr")) install.packages("ggpubr")
+library(ggpubr)
+if(!require("DT")) install.packages("DT")
+library(DT)
+if(!require("scales")) install.packages("scales")
 library(scales)
+if(!require("zoo")) install.packages("zoo")
 library(zoo)
-require(hrbrthemes)
-library(ggrepel)
-library(plotly)
-library(viridis)
+if(!require("hrbrthemes")) install.packages("hrbrthemes")
 library(hrbrthemes)
+if(!require("ggrepel")) install.packages("ggrepel")
+library(ggrepel)
+if(!require("plotly")) install.packages("plotly")
+library(plotly)
+if(!require("viridis")) install.packages("viridis")
+library(viridis)
+if(!require("hrbrthemes")) install.packages("hrbrthemes")
+library(hrbrthemes)
+if(!require("RColorBrewer")) install.packages("RColorBrewer")
 library(RColorBrewer)
+if(!require("wordcloud")) install.packages("wordcloud")
 library(wordcloud)
+if(!require("readr")) install.packages("readr")
 library(readr)
 ```
 
 
 
 ```{r}
-zillow_house = read.csv('ZillowHouseData.csv')
-crime_state = read.csv('ucr_stat2.csv')
-silver_price = read.csv('Silver.csv')
-state_unemployment = read.csv('State.csv')
-national_unemployment = read.csv('NationalUnemployment.csv')
-nasdaq = read.csv('Nasdaq.csv')
-mortgage_rate = read.csv('MORTGAGE30US.csv')
-job_1 = read.csv('Joblosesandgainsbyindustry.csv')
-job_2 = read.csv('Output.csv')
-gold_price = read.csv('GoldPrice.csv')
-gdp = read.csv('GDP.csv')
-employment = read.csv('EmploymentByIndustry.csv')
-employment2 = read.csv('employment2.csv')
-oil = read.csv('CrudOil.csv')
-consumer_spending = read.csv('ConsumerSpending.csv')
-health_data = read.csv('CleanHealth.csv')
+zillow_house = read.csv('data/ZillowHouseData.csv')
+crime_state = read.csv('data/ucr_stat2.csv')
+silver_price = read.csv('data/Silver.csv')
+state_unemployment = read.csv('data/State.csv')
+national_unemployment = read.csv('data/NationalUnemployment.csv')
+nasdaq = read.csv('data/Nasdaq.csv')
+mortgage_rate = read.csv('data/MORTGAGE30US.csv')
+job_1 = read.csv('data/Joblosesandgainsbyindustry.csv')
+job_2 = read.csv('data/Output.csv')
+gold_price = read.csv('data/GoldPrice.csv')
+gdp = read.csv('data/GDP.csv')
+employment = read.csv('data/EmploymentByIndustry.csv')
+employment2 = read.csv('data/employment2.csv')
+oil = read.csv('data/CrudOil.csv')
+consumer_spending = read.csv('data/ConsumerSpending.csv')
+health_data = read.csv('data/CleanHealth.csv')
 
 
 for (i in seq(3, ncol(job_2), 2)) {
@@ -128,6 +141,7 @@ ggplot(data = mortgage_rate, aes(x=DATE, y=mortgage_rate, group=1)) + geom_line(
 
 # ggarrange(unemployment, econ, spend, mortgage, ncol = 2, nrow = 2, width = 6)
 ```
+
 ```{r}
 type = function(x) {
   if (x == 'Close') 
@@ -178,6 +192,11 @@ zillow_house3
 ```
 
 ```{r}
+zillow_house2 = zillow_house %>% group_by(Year=year(Date), State, City) %>% summarize(avg_home_price = mean(House.Price))
+zillow_house2
+zillow_house3 = zillow_house %>% group_by(Year=year(Date), State) %>% summarize(avg_home_price = mean(House.Price))
+zillow_house3
+
 zillow_house3 %>% 
 datatable( 
   #Show custom column headers.
